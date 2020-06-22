@@ -124,7 +124,6 @@ class PULSE(torch.nn.Module):
         loss_builder = LossBuilder(ref_im, loss_str, eps).cuda()
 
         min_loss = np.inf
-        min_l2 = np.inf
         best_summary = ""
         start_t = time.time()
         gen_im = None
@@ -157,11 +156,6 @@ class PULSE(torch.nn.Module):
                 [f'{x}: {y:.4f}' for x, y in loss_dict.items()])
                 best_im = gen_im.clone()
 
-            loss_l2 = loss_dict['L2']
-
-            if(loss_l2 < min_l2):
-                min_l2 = loss_l2
-
             # Save intermediate HR and LR images
             if(save_intermediate):
                 yield (best_im.cpu().detach().clamp(0, 1),loss_builder.D(best_im).cpu().detach().clamp(0, 1))
@@ -173,7 +167,5 @@ class PULSE(torch.nn.Module):
         total_t = time.time()-start_t
         current_info = f' | time: {total_t:.1f} | it/s: {(j+1)/total_t:.2f} | batchsize: {batch_size}'
         if self.verbose: print(best_summary+current_info)
-        if(min_l2 <= eps):
-            yield (gen_im.clone().cpu().detach().clamp(0, 1),loss_builder.D(best_im).cpu().detach().clamp(0, 1))
-        else:
-            print("Could not find a face that downscales correctly within epsilon")
+
+        yield (gen_im.clone().cpu().detach().clamp(0, 1),loss_builder.D(best_im).cpu().detach().clamp(0, 1))
